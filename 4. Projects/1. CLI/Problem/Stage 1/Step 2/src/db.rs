@@ -1,4 +1,6 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
+use serde_json::{from_str, to_string_pretty};
+use std::fs::{read_to_string, write};
 
 use crate::models::{DBState, Epic, Story, Status};
 
@@ -13,11 +15,26 @@ struct JSONFileDatabase {
 
 impl Database for JSONFileDatabase {
     fn read_db(&self) -> Result<DBState> {
-        todo!() // read the content's of self.file_path and deserialize it using serde
+        // read the content's of self.file_path and deserialize it using serde
+        let file_content = read_to_string(&self.file_path)
+        .with_context(|| format!("Failed to read file at {:?}", self.file_path))?;
+
+        let db_state: DBState = from_str(&file_content)
+        .with_context(|| "Failed to deserialize JSON into DBState")?;
+
+        Ok(db_state)
+
     }
 
     fn write_db(&self, db_state: &DBState) -> Result<()> {
-        todo!() // serialize db_state to json and store it in self.file_path
+        // serialize db_state to json and store it in self.file_path
+        let json = to_string_pretty(db_state)
+        .with_context(|| "Failed to serialize DBState to JSON")?;
+
+        write(&self.file_path, json)
+        .with_context(|| format!("Failed to write JSON to file at {:?}", self.file_path))?;
+
+        Ok(())
     }
 }
 
