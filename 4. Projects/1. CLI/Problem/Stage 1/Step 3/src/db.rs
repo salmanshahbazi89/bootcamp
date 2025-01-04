@@ -10,19 +10,34 @@ pub struct JiraDatabase {
 
 impl JiraDatabase {
     pub fn new(file_path: String) -> Self {
-        todo!()
+        Self{
+            database: Box::new(JSONFileDatabase { file_path }),
+        }        
     }
 
     pub fn read_db(&self) -> Result<DBState> {
-        todo!()
+        self.read_db()
     }
     
     pub fn create_epic(&self, epic: Epic) -> Result<u32> {
-        todo!()
+        let mut db = self.database.read_db()?;
+        let new_id = db.last_item_id + 1;       
+        db.epics.insert(new_id, epic);
+        db.last_item_id = new_id;
+        self.database.write_db(&db)?;
+
+        Ok(new_id)
     }
     
     pub fn create_story(&self, story: Story, epic_id: u32) -> Result<u32> {
-        todo!()
+        let mut db = self.database.read_db()?;
+        let new_id = db.last_item_id + 1;       
+        db.stories.insert(new_id, story);
+        db.epics.get_mut(&epic_id).ok_or_else(|| anyhow!("could not find such and epic in the database"))?
+        .stories.push(new_id)
+        db.last_item_id = new_id;
+        self.database.write_db(&db)?;
+        Ok(new_id)
     }
     
     pub fn delete_epic(&self, epic_id: u32) -> Result<()> {
